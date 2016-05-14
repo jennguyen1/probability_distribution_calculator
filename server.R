@@ -172,6 +172,70 @@ function(input, output){
     
   })
   
+  ###################
+  # Generate Graphs #
+  ###################
+  
+  # probability density function
+  output$density <- renderPlot({
+    # obtain parameters
+    params <- get_params()
+    
+    # discrete distributions
+    if( is_discrete() ){
+      # generate data and shading
+      x <- params$min:params$max
+      data <- data.frame(x = x, y = params$dfun(x))
+      data$shade <- switch(input$side2,
+                           "less than" = ifelse(data$x <= params$x, "shade", "no-shade"),
+                           "greater than" = ifelse(data$x <= params$x, "no-shade", "shade")
+      )
+      
+      # generate plot: portion of plot is shaded
+      density <- ggplot(data = data, aes(x = x, xend = x, y = 0, yend = y, color = shade)) +
+        geom_segment(size = 2) +
+        # shade in area less than x
+        scale_color_manual(values = c("black", "royalblue")) +
+        theme(legend.position = "none") 
+      
+      # generate plot: all of plot is shaded (above can't distinguish b/n shades)
+      if( all(data$shade == "shade") ){
+        density <- ggplot(data = data, aes(x = x, xend = x, y = 0, yend = y)) +
+          geom_segment(size = 2, color = "royalblue") 
+      }
+      
+    # continuous distributions
+    } else{
+      
+      # function for shading in area under the curve wrt probability
+      shade_fun <- function(x){
+        # generate the y values of graph
+        y <- params$dfun(x)
+        
+        # only keep the y values that correspond to the probability inequality
+        switch(input$side2,
+               "less than" = y[x > input$x] <- NA,
+               "greater than" = y[x < input$x] <- NA
+                )
+        
+        # return results
+        return(y)
+      }
+
+      # generate plot using function
+      density <- ggplot(data = NULL, aes(x = c(params$min, params$max))) +
+        stat_function(fun = params$dfun, size = 1.25) +
+        stat_function(fun = shade_fun, geom = "area", fill = "royalblue", color = "royalblue")
+      
+    }
+    
+    # add axis labels
+    density <- density + xlab("X") + ylab("Density")
+    
+    # print plot
+    density
+  })
+  
 
 }
 
