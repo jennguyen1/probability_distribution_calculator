@@ -120,25 +120,21 @@ function(input, output){
   
   # provide additional options for one or two sided values
   output$side_option <- renderUI({
-    if( input$side == "one-sided" ){
-      radioButtons("side2", "one-sided options", c("less than", "greater than"))
-    } else{
-      radioButtons("side2", "two-sided options", c("between", "outside"))
-    }
+    switch(input$side,
+           "one-sided" = radioButtons("side2", "one-sided options", c("less than", "greater than")),
+           "two-sided" = radioButtons("side2", "two-sided options", c("between", "outside"))
+    )
   })
     
   # provide additional options for one or two sided values in terms of x
   output$x_option1 <- renderUI({
-    if( input$side == "two-sided"){
-      numericInput("x1", "x1", 1)
-    } else{
-      numericInput("x", "x", 1)
-    }
+    switch(input$side,
+           "one-sided" = numericInput("x", "x", 1),
+           "two-sided" = numericInput("x1", "x1", 1)
+    )
   })
   output$x_option2 <- renderUI({
-    if( input$side == "two-sided" ){
-      numericInput("x2", "x2", 1)
-    }
+    if( input$side == "two-sided" ) numericInput("x2", "x2", 1)
   })
 
   #######################
@@ -226,7 +222,6 @@ function(input, output){
       density <- ggplot(data = NULL, aes(x = c(params$min, params$max))) +
         stat_function(fun = params$dfun, size = 1.25) +
         stat_function(fun = shade_fun, geom = "area", fill = "royalblue", color = "royalblue")
-      
     }
     
     # add axis labels
