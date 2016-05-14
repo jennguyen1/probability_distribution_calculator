@@ -12,13 +12,16 @@ fluidPage(
       ##################
       # Select Options #
       ##################
+      h3("Select Options"),
       
       # Which side of distribution to select
-      radioButtons("side", "side", c("one-sided: greater than", "one-sided: less than", "two-sided: between", "two-sided: outside")),
+      radioButtons("side", "side", c("one-sided", "two-sided")),
+      uiOutput("side_option"),
       
       # Select X
-      numericInput("x", "x", 1),
-      
+      uiOutput("x_option1"),
+      uiOutput("x_option2"),
+
       ######################################
       # Select Distribution and Parameters #
       ######################################
@@ -90,7 +93,9 @@ fluidPage(
     
     # Print Plot
     mainPanel(
-
+      h4(textOutput("prob")),
+      # plotOutput("cdf", height = "200px"),
+      plotOutput("density", height = "200px")
     )
   )
 )
