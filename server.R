@@ -2,6 +2,7 @@
 
 library(stringr)
 library(plyr)
+library(dplyr)
 library(ggplot2)
 theme_set(theme_bw())
 library(gridExtra)
@@ -148,24 +149,20 @@ function(input, output){
     outText <- paste0(input$dist, ": ")
     
     # compute probabilities for one-sided computations
-    if(input$side == "one-sided"){
-      
-      if(input$side2 == "less than"){
-        paste0(outText, "P(X < ", input$x, ") = ", signif(get_params()$pfun(input$x), 3))
-      } else{
-        paste0(outText, "P(X > ", input$x, ") = ", signif(get_params()$pfun(input$x, lower.tail = FALSE), 3))
-      }
-      
-    # compute probabilities for two-sided computations
-    } else{
-      
-      if(input$side2 == "between"){
-        paste0(outText, "P(", input$x1, " < X < ", input$x2, ") = ", signif(get_params()$pfun(input$x2) - get_params()$pfun(input$x1) , 3))
-      } else{
-        paste0(outText, "P(X < ", input$x1, ", X > ", input$x2, ") = ", signif(get_params()$pfun(input$x2, lower.tail = FALSE) + get_params()$pfun(input$x1) , 3))
-      }
-    }
-    
+    switch(input$side,
+           "one-sided" = {
+             switch(input$side2,
+                    "less than" = paste0(outText, "P(X < ", input$x, ") = ", signif(get_params()$pfun(input$x), 3)),
+                    "greater than" = paste0(outText, "P(X > ", input$x, ") = ", signif(get_params()$pfun(input$x, lower.tail = FALSE), 3))
+              )
+            },
+           "two-sided" = {
+             switch(input$side2,
+                    "between" = paste0(outText, "P(", input$x1, " < X < ", input$x2, ") = ", signif(get_params()$pfun(input$x2) - get_params()$pfun(input$x1) , 3)),
+                    "outside" = paste0(outText, "P(X < ", input$x1, ", X > ", input$x2, ") = ", signif(get_params()$pfun(input$x2, lower.tail = FALSE) + get_params()$pfun(input$x1) , 3))
+             )
+            }
+    )
   })
   
   ###################
@@ -182,9 +179,15 @@ function(input, output){
       # generate data and shading
       x <- params$min:params$max
       data <- data.frame(x = x, y = params$dfun(x))
-      data$shade <- switch(input$side2,
-                           "less than" = ifelse(data$x <= params$x, "shade", "no-shade"),
-                           "greater than" = ifelse(data$x <= params$x, "no-shade", "shade")
+      data$shade <- switch(input$side,
+                           "one-sided" = switch(input$side2,
+                                                "less than" = ifelse(data$x <= params$x, "shade", "no-shade"),
+                                                "greater than" = ifelse(data$x <= params$x, "no-shade", "shade")
+                            ),
+                           "two-sided" = switch(input$side2,
+                                                "between" = ifelse(dplyr::between(data$x, input$x1, input$x2), "shade", "no-shade"),
+                                                "outside" = ifelse(dplyr::between(data$x, input$x1, input$x2), "no-shade", "shade")
+                            )
       )
       
       # generate plot: portion of plot is shaded
@@ -209,10 +212,16 @@ function(input, output){
         y <- params$dfun(x)
         
         # only keep the y values that correspond to the probability inequality
-        switch(input$side2,
-               "less than" = y[x > input$x] <- NA,
-               "greater than" = y[x < input$x] <- NA
-                )
+        switch(input$side,
+               "one-sided" = switch(input$side2,
+                                    "less than" = y[x > input$x] <- NA,
+                                    "greater than" = y[x < input$x] <- NA
+               ),
+               "two-sided" = switch(input$side2,
+                                    "between" = y[!dplyr::between(x, input$x1, input$x2)] <- NA,
+                                    "outside" = y[dplyr::between(x, input$x1, input$x2)] <- NA
+               )
+        )
         
         # return results
         return(y)
@@ -231,7 +240,6 @@ function(input, output){
     density
   })
   
-
 }
 
 
