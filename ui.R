@@ -94,8 +94,8 @@ fluidPage(
     # Print Plot
     mainPanel(
       h4(textOutput("prob")),
-      # plotOutput("cdf", height = "200px"),
-      plotOutput("density", height = "200px")
+      plotOutput("density", height = "200px"),
+      plotOutput("cdf", height = "200px")
     )
   )
 )

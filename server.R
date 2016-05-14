@@ -240,6 +240,40 @@ function(input, output){
     density
   })
   
+
+  # cumulative distribution function if side option is one-sided less than
+  output$cdf <- renderPlot({
+    if( input$side == "one-sided" & input$side2 == "less than"){
+      
+      # obtain parameters
+      params <- get_params()
+      
+      # generate x axis
+      x <- seq(params$min, params$max, length.out = 1000)
+      
+      # discrete distribution
+      if( is_discrete() ){
+        # generate data for discrete - fix for values that aren't 0 at x = 0
+        data <- data.frame(x = c(x[1] - 0.02, x), y = c(params$pfun(x[1] - 0.02), params$pfun(floor(x))))
+        
+      # continuous distribution
+      } else{
+        # generate data for continuous
+        data <- data.frame(x = x, y = params$pfun(x))
+      }
+      
+      # generate plot: cdf
+      ggplot(data = data, aes(x = x, y = y)) +
+        geom_line(size = 1.25) +
+        # generate segment and point for x
+        geom_segment(aes(x = params$x, xend = params$x, y = 0, yend = params$pfun(params$x)), size = 0.85, color = "royalblue") +
+        geom_point(aes(x = params$x, y = params$pfun(params$x)), size = 2, color = "royalblue") +
+        # axis labels
+        xlab("X") + ylab("Cumulative Probability")
+
+    }
+  })
+
 }
 
 
