@@ -18,11 +18,14 @@ fluidPage(
     h3("Select Distribution"),
     
     wellPanel(
+      # print X distribution in common notation
+      h3(textOutput("model_descr")),
+      br(),
       
       tabsetPanel(
         
         # CONTINUOUS DISTRIBUTIONS #
-
+        
         # Normal distribution
         tabPanel(
           "Normal",
@@ -75,7 +78,7 @@ fluidPage(
         ),
         
         # DISCRETE DISTRIBUTIONS #
-
+        
         # Binomial distribution
         tabPanel(
           "Binomial",
@@ -101,7 +104,6 @@ fluidPage(
         # panel descriptions
         id = "dist"
       )
-      
     ),
     
     ##################
@@ -110,12 +112,12 @@ fluidPage(
     h3("Select Options"),
     
     wellPanel(verticalLayout(
-    
+      
       # one-tailed or two-tailed of distribution
       flowLayout(
         radioButtons("side", "side", c("one-sided", "two-sided")),
         uiOutput("side_option"),
-        h3(textOutput("model_descr"))
+        h3(textOutput("prob_descr"))
       ),
       
       # input percentiles or quantiles
@@ -131,7 +133,7 @@ fluidPage(
         # select p
         uiOutput("p_option")
       )
-    
+      
     )),
     
     ################

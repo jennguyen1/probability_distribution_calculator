@@ -39,7 +39,7 @@ function(input, output){
   })
   
   # provide description of the model being generated
-  output$model_descr <- renderText({
+  output$prob_descr <- renderText({
     switch(input$side,
            "one-sided" = ifelse(input$side2 == "lower tail", "P(X <= x)", "P(X > x)"),
            "two-sided" = ifelse(input$side2 == "between", "P(x1 < X < x2)", "P(X < x1 or X > x2)")
@@ -53,7 +53,7 @@ function(input, output){
     pfun <- match.fun(paste0("p", dist()))
     dfun <- match.fun(paste0("d", dist()))
     qfun <- match.fun(paste0("q", dist()))
-
+    
     # set the parameters for the distributions
     switch(input$dist,
            "Binomial" = {
@@ -67,6 +67,7 @@ function(input, output){
              formals(dfun)$prob <- p
              formals(qfun)$size <- n
              formals(qfun)$prob <- p
+             model_descr <- paste0("X ~ Bin(", n, ", ", p, ")")
            },
            "Negative Binomial" = {
              n <- input$nbinom.n
@@ -79,6 +80,7 @@ function(input, output){
              formals(dfun)$prob <- p
              formals(qfun)$size <- n
              formals(qfun)$prob <- p
+             model_descr <- paste0("X ~ NBin(", n, ", ", p, ")")
            },
            "Poisson" = {
              lambda <- input$pois.lambda
@@ -87,6 +89,7 @@ function(input, output){
              formals(pfun)$lambda <- lambda
              formals(dfun)$lambda <- lambda
              formals(qfun)$lambda <- lambda
+             model_descr <- paste0("X ~ Pois(", lambda, ")")
            },
            "Normal" = {
              mean <- input$norm.mean
@@ -99,6 +102,7 @@ function(input, output){
              formals(dfun)$sd <- sd
              formals(qfun)$mean <- mean
              formals(qfun)$sd <- sd
+             model_descr <- paste0("X ~ N(", mean, ", ", sd^2, ")")
            },
            "T" = {
              df <- input$t.df
@@ -107,6 +111,7 @@ function(input, output){
              formals(pfun)$df <- df
              formals(dfun)$df <- df
              formals(qfun)$df <- df
+             model_descr <- paste0("X ~ T(", df, ")")
            },
            "Gamma" = {
              shape <- input$gamma.shape
@@ -119,6 +124,7 @@ function(input, output){
              formals(dfun)$rate <- rate
              formals(qfun)$shape <- shape
              formals(qfun)$rate <- rate
+             model_descr <- paste0("X ~ Gamma(", shape, ", ", rate, ")")
            },
            "Chi-Square" = {
              df <- input$chisq.df
@@ -127,6 +133,7 @@ function(input, output){
              formals(pfun)$df <- df
              formals(dfun)$df <- df
              formals(qfun)$df <- df
+             model_descr <- paste0("X ~ X^2(", df, ")")
            },
            "F" = {
              df.num <- input$f.df1
@@ -139,6 +146,7 @@ function(input, output){
              formals(dfun)$df2 <- df.denom
              formals(qfun)$df1 <- df.num
              formals(qfun)$df2 <- df.denom
+             model_descr <- paste0("X ~ F(", df1, ", ", df2, ")")
            },
            "Uniform" = {
              lower <- input$unif.min
@@ -151,6 +159,7 @@ function(input, output){
              formals(dfun)$max <- upper
              formals(qfun)$min <- lower
              formals(qfun)$max <- upper
+             model_descr <- paste0("X ~ Unif(", lower, ", ", upper, ")")
            },
            "Beta" = {
              shape1 <- input$beta.shape1
@@ -163,17 +172,22 @@ function(input, output){
              formals(dfun)$shape2 <- shape2
              formals(qfun)$shape1 <- shape1
              formals(qfun)$shape2 <- shape2
+             model_descr <- paste0("X ~ Beta(", shape1, ", ", shape2, ")")
            }
     )
     
     # return list of outputs
-      # min/max: of x ranges for x-axis
-      # pfun: returns x given probabilities
-      # dfun: returns density given x
-      # qfun: returns probability given x
-    list(min = min, max = max, pfun = pfun, dfun = dfun, qfun = qfun)
+    # model_descr: model notation
+    # min/max: of x ranges for x-axis
+    # pfun: returns x given probabilities
+    # dfun: returns density given x
+    # qfun: returns probability given x
+    list(model_descr = model_descr, min = min, max = max, pfun = pfun, dfun = dfun, qfun = qfun)
     
   })
+  
+  # provide description of the model being generated
+  output$model_descr <- renderText(get_params()$model_descr)
   
   # provide additional options for one or two sided values in terms of x or probability
   output$x_option1 <- renderUI({
@@ -204,33 +218,33 @@ function(input, output){
     use_p <- ifelse(input$side2 == "both tails", input$p/2, .5 - input$p/2)
     ifelse(input$type == "x", input$x2, signif(get_params()$qfun(use_p, lower.tail = FALSE), 3)) 
   })
-
+  
   #######################
   # Compute Probability #
   #######################
   
   # probability 
   output$prob <- renderText({
-
+    
     # initalize the output text with distribution
     prefix <- paste0(input$dist, ": ")
     
     # compute probabilities 
     outText <- switch(input$side,
-           # compute probabilities for one-sided computations
-           "one-sided" = {
-             switch(input$side2,
-                    "lower tail" = paste0(prefix, "P(X <= ", in_x(), ") = ", signif(get_params()$pfun(in_x()), 3)),
-                    "upper tail" = paste0(prefix, "P(X > ", in_x(), ") = ", signif(get_params()$pfun(in_x(), lower.tail = FALSE), 3))
-              )
-            },
-           # compute probabilities for two-sided computations
-           "two-sided" = {
-             switch(input$side2,
-                    "between" = paste0(prefix, "P(", in_x1(), " < X < ", in_x2(), ") = ", signif(get_params()$pfun(in_x2()) - get_params()$pfun(in_x1()) , 3)),
-                    "both tails" = paste0(prefix, "P(X < ", in_x1(), " or X > ", in_x2(), ") = ", signif(get_params()$pfun(in_x2(), lower.tail = FALSE) + get_params()$pfun(in_x1()) , 3))
-             )
-            }
+                      # compute probabilities for one-sided computations
+                      "one-sided" = {
+                        switch(input$side2,
+                               "lower tail" = paste0(prefix, "P(X <= ", in_x(), ") = ", signif(get_params()$pfun(in_x()), 3)),
+                               "upper tail" = paste0(prefix, "P(X > ", in_x(), ") = ", signif(get_params()$pfun(in_x(), lower.tail = FALSE), 3))
+                        )
+                      },
+                      # compute probabilities for two-sided computations
+                      "two-sided" = {
+                        switch(input$side2,
+                               "between" = paste0(prefix, "P(", in_x1(), " < X < ", in_x2(), ") = ", signif(get_params()$pfun(in_x2()) - get_params()$pfun(in_x1()) , 3)),
+                               "both tails" = paste0(prefix, "P(X < ", in_x1(), " or X > ", in_x2(), ") = ", signif(get_params()$pfun(in_x2(), lower.tail = FALSE) + get_params()$pfun(in_x1()) , 3))
+                        )
+                      }
     )
     
     # output probability
@@ -242,7 +256,7 @@ function(input, output){
       } else{
         paste0(prefix, "distribution is not symmetric")
       }
-    # if x's are specified, print probability
+      # if x's are specified, print probability
     } else{
       outText
     }
@@ -268,11 +282,11 @@ function(input, output){
                            "one-sided" = switch(input$side2,
                                                 "lower tail" = ifelse(data$x <= in_x(), "shade", "no-shade"),
                                                 "upper tail" = ifelse(data$x <= in_x(), "no-shade", "shade")
-                            ),
+                           ),
                            "two-sided" = switch(input$side2,
                                                 "between" = ifelse(dplyr::between(data$x, in_x1(), in_x2()), "shade", "no-shade"),
                                                 "both tails" = ifelse(dplyr::between(data$x, in_x1(), in_x2()), "no-shade", "shade")
-                            )
+                           )
       )
       
       # generate plot: if portion of plot is shaded
@@ -287,7 +301,7 @@ function(input, output){
           geom_segment(size = 2, color = "royalblue") 
       }
       
-    # continuous distributions
+      # continuous distributions
     } else{
       
       # function for shading in area under the curve wrt probability
@@ -310,7 +324,7 @@ function(input, output){
         # return results
         return(y)
       }
-
+      
       # generate plot using shading function
       density <- ggplot(data = NULL, aes(x = c(params$min, params$max))) +
         stat_function(fun = params$dfun, size = 1.25) +
@@ -318,7 +332,7 @@ function(input, output){
     }
     
     # add axis labels
-    density <- density + xlab("X") + ylab("Density")
+    density <- density + xlab("X") + ylab("Density") + ggtitle(paste(input$dist, "distribution"))
     
     # output plot
     
@@ -327,7 +341,7 @@ function(input, output){
       if( (input$side == "one-sided") | (input$side == "two-sided" & is_symmetric()) ){
         density
       }
-    # if x's are specified, print plot
+      # if x's are specified, print plot
     } else{
       density
     }
@@ -349,7 +363,7 @@ function(input, output){
         # fix for values that aren't 0 at x = 0
         data <- data.frame(x = c(x[1] - 0.02, x), y = c(params$pfun(x[1] - 0.02), params$pfun(floor(x))))
         
-      # generate probabilites for continuous
+        # generate probabilites for continuous
       } else{
         data <- data.frame(x = x, y = params$pfun(x))
       }
@@ -362,9 +376,9 @@ function(input, output){
         geom_point(aes(x = in_x(), y = params$pfun(in_x())), size = 2, color = "royalblue") +
         # axis labels
         xlab("X") + ylab("Cumulative Probability")
-
+      
     }
   })
-
+  
 } # end of server function
 
