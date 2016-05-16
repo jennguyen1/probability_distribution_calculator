@@ -1,3 +1,7 @@
+# Server Code for Probability Distribution Calculator
+# Date: May 2016
+# Author: Jenny Nguyen
+# Email: jnnguyen2@wisc.edu
 
 # load libraries
 library(stringr)
@@ -26,18 +30,18 @@ function(input, output){
   # flag for symmetric distributions about 0
   is_symmetric <- reactive({ dist() %in% c("norm", "t", "unif") })
   
-  # provide additional options for one or two sided values
+  # provide additional options depending on one or two sided values
   output$side_option <- renderUI({
     switch(input$side,
-           "one-sided" = radioButtons("side2", "one-sided options", c("left tailed", "right tailed")),
-           "two-sided" = radioButtons("side2", "two-sided options", c("between", "outside"))
+           "one-sided" = radioButtons("side2", "one-sided options", c("lower tail", "upper tail")),
+           "two-sided" = radioButtons("side2", "two-sided options", c("between", "both tails"))
     )
   })
   
   # set distribution parameters
   get_params <- reactive({
     
-    # convert into function
+    # convert distribution into function
     pfun <- match.fun(paste0("p", dist()))
     dfun <- match.fun(paste0("d", dist()))
     qfun <- match.fun(paste0("q", dist()))
@@ -143,21 +147,23 @@ function(input, output){
     )
     
     # return list of outputs
+      # min/max: of x ranges for x-axis
+      # pfun: returns x given probabilities
+      # dfun: returns density given x
+      # qfun: returns probability given x
     list(min = min, max = max, pfun = pfun, dfun = dfun, qfun = qfun)
+    
   })
   
-  # provide option for probability
-  output$p_option <- renderUI({
-    if(input$type == "probability") numericInput("p", "p", 0.25)
-  })
-  
-  # provide additional options for one or two sided values in terms of x
+  # provide additional options for one or two sided values in terms of x or probability
   output$x_option1 <- renderUI({
     if(input$type == "x"){
       switch(input$side,
              "one-sided" = numericInput("x", "x", 1),
              "two-sided" = numericInput("x1", "x1", 1)
       )
+    } else{
+      numericInput("p", "p", 0.25)
     }
   })
   output$x_option2 <- renderUI({
@@ -168,14 +174,14 @@ function(input, output){
   
   # initialize x's depending on whether the input is x or probability
   in_x <- reactive({ 
-    ifelse(input$type == "x", input$x, signif(get_params()$qfun(input$p, lower.tail = input$side2 == "left tailed"), 3)) 
+    ifelse(input$type == "x", input$x, signif(get_params()$qfun(input$p, lower.tail = input$side2 == "lower tail"), 3)) 
   })
   in_x1 <- reactive({ 
-    use_p <- ifelse(input$side2 == "outside", input$p/2, .5 - input$p/2)
+    use_p <- ifelse(input$side2 == "both tails", input$p/2, .5 - input$p/2)
     ifelse(input$type == "x", input$x1, signif(get_params()$qfun(use_p), 3)) 
   })
   in_x2 <- reactive({ 
-    use_p <- ifelse(input$side2 == "outside", input$p/2, .5 - input$p/2)
+    use_p <- ifelse(input$side2 == "both tails", input$p/2, .5 - input$p/2)
     ifelse(input$type == "x", input$x2, signif(get_params()$qfun(use_p, lower.tail = FALSE), 3)) 
   })
 
@@ -183,49 +189,40 @@ function(input, output){
   # Compute Probability #
   #######################
   
-  # probability depending on the side option
+  # probability 
   output$prob <- renderText({
 
     # initalize the output text with distribution
     prefix <- paste0(input$dist, ": ")
     
-    # compute probabilities for one-sided computations
+    # compute probabilities 
     outText <- switch(input$side,
+           # compute probabilities for one-sided computations
            "one-sided" = {
              switch(input$side2,
-                    "left tailed" = paste0(prefix, "P(X < ", in_x(), ") = ", signif(get_params()$pfun(in_x()), 3)),
-                    "right tailed" = paste0(prefix, "P(X > ", in_x(), ") = ", signif(get_params()$pfun(in_x(), lower.tail = FALSE), 3))
+                    "lower tail" = paste0(prefix, "P(X <= ", in_x(), ") = ", signif(get_params()$pfun(in_x()), 3)),
+                    "upper tail" = paste0(prefix, "P(X > ", in_x(), ") = ", signif(get_params()$pfun(in_x(), lower.tail = FALSE), 3))
               )
             },
+           # compute probabilities for two-sided computations
            "two-sided" = {
              switch(input$side2,
                     "between" = paste0(prefix, "P(", in_x1(), " < X < ", in_x2(), ") = ", signif(get_params()$pfun(in_x2()) - get_params()$pfun(in_x1()) , 3)),
-                    "outside" = paste0(prefix, "P(X < ", in_x1(), ", X > ", in_x2(), ") = ", signif(get_params()$pfun(in_x2(), lower.tail = FALSE) + get_params()$pfun(in_x1()) , 3))
+                    "both tails" = paste0(prefix, "P(X < ", in_x1(), " or X > ", in_x2(), ") = ", signif(get_params()$pfun(in_x2(), lower.tail = FALSE) + get_params()$pfun(in_x1()) , 3))
              )
             }
     )
     
-    # print plot
-    if(input$type == "probability"){
-      # if p is specified, print plot as long as it is not a two-tailed of a non-symmetric distribution
-      if( (input$side == "one-sided") | (input$side == "two-sided" & is_symmetric()) ){
-        density
-      }
-    } else{
-      # if x's are specified, print plot
-      density
-    }
-    
-    
     # output probability
-    # if p is specified, print text as long as it is not a two-tailed of a non-symmetric distribution
+    
+    # if p is specified, print probability as long as it is not a two-tailed of a non-symmetric distribution
     if(input$type == "probability"){
       if( (input$side == "one-sided") | (input$side == "two-sided" & is_symmetric()) ){
         outText
       } else{
         paste0(prefix, "distribution is not symmetric about 0")
       }
-    # if x's are specified, print text
+    # if x's are specified, print probability
     } else{
       outText
     }
@@ -243,28 +240,28 @@ function(input, output){
     
     # discrete distributions
     if( is_discrete() ){
+      
       # generate data and shading
       x <- params$min:params$max
       data <- data.frame(x = x, y = params$dfun(x))
       data$shade <- switch(input$side,
                            "one-sided" = switch(input$side2,
-                                                "left tailed" = ifelse(data$x <= in_x(), "shade", "no-shade"),
-                                                "right tailed" = ifelse(data$x <= in_x(), "no-shade", "shade")
+                                                "lower tail" = ifelse(data$x <= in_x(), "shade", "no-shade"),
+                                                "upper tail" = ifelse(data$x <= in_x(), "no-shade", "shade")
                             ),
                            "two-sided" = switch(input$side2,
                                                 "between" = ifelse(dplyr::between(data$x, in_x1(), in_x2()), "shade", "no-shade"),
-                                                "outside" = ifelse(dplyr::between(data$x, in_x1(), in_x2()), "no-shade", "shade")
+                                                "both tails" = ifelse(dplyr::between(data$x, in_x1(), in_x2()), "no-shade", "shade")
                             )
       )
       
-      # generate plot: portion of plot is shaded
+      # generate plot: if portion of plot is shaded
       density <- ggplot(data = data, aes(x = x, xend = x, y = 0, yend = y, color = shade)) +
         geom_segment(size = 2) +
-        # shade in area left tailed x
         scale_color_manual(values = c("black", "royalblue")) +
         theme(legend.position = "none") 
       
-      # generate plot: all of plot is shaded (above can't distinguish b/n shades)
+      # generate plot: if all of plot is shaded (above can't distinguish b/n shades)
       if( all(data$shade == "shade") ){
         density <- ggplot(data = data, aes(x = x, xend = x, y = 0, yend = y)) +
           geom_segment(size = 2, color = "royalblue") 
@@ -281,12 +278,12 @@ function(input, output){
         # only keep the y values that correspond to the probability inequality
         switch(input$side,
                "one-sided" = switch(input$side2,
-                                    "left tailed" = y[x > in_x()] <- NA,
-                                    "right tailed" = y[x < in_x()] <- NA
+                                    "lower tail" = y[x > in_x()] <- NA,
+                                    "upper tail" = y[x < in_x()] <- NA
                ),
                "two-sided" = switch(input$side2,
                                     "between" = y[!dplyr::between(x, in_x1(), in_x2())] <- NA,
-                                    "outside" = y[dplyr::between(x, in_x1(), in_x2())] <- NA
+                                    "both tails" = y[dplyr::between(x, in_x1(), in_x2())] <- NA
                )
         )
         
@@ -294,7 +291,7 @@ function(input, output){
         return(y)
       }
 
-      # generate plot using function
+      # generate plot using shading function
       density <- ggplot(data = NULL, aes(x = c(params$min, params$max))) +
         stat_function(fun = params$dfun, size = 1.25) +
         stat_function(fun = shade_fun, geom = "area", fill = "royalblue", color = "royalblue")
@@ -303,22 +300,23 @@ function(input, output){
     # add axis labels
     density <- density + xlab("X") + ylab("Density")
     
-    # print plot
+    # output plot
+    
+    # if p is specified, print plot as long as it is not a two-tailed of a non-symmetric distribution
     if(input$type == "probability"){
-      # if p is specified, print plot as long as it is not a two-tailed of a non-symmetric distribution
       if( (input$side == "one-sided") | (input$side == "two-sided" & is_symmetric()) ){
         density
       }
+    # if x's are specified, print plot
     } else{
-      # if x's are specified, print plot
       density
     }
     
   })
   
-  # cumulative distribution function if side option is one-sided left tailed
+  # cumulative distribution function - only if side option is one-sided lower tail
   output$cdf <- renderPlot({
-    if( input$side == "one-sided" & input$side2 == "left tailed"){
+    if( input$side == "one-sided" & input$side2 == "lower tail"){
       
       # obtain parameters
       params <- get_params()
@@ -326,14 +324,13 @@ function(input, output){
       # generate x axis
       x <- seq(params$min, params$max, length.out = 1000)
       
-      # discrete distribution
+      # generate probabilities for discrete 
       if( is_discrete() ){
-        # generate probabilities for discrete - fix for values that aren't 0 at x = 0
+        # fix for values that aren't 0 at x = 0
         data <- data.frame(x = c(x[1] - 0.02, x), y = c(params$pfun(x[1] - 0.02), params$pfun(floor(x))))
         
-      # continuous distribution
+      # generate probabilites for continuous
       } else{
-        # generate probabilites for continuous
         data <- data.frame(x = x, y = params$pfun(x))
       }
       

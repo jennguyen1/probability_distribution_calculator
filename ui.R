@@ -1,5 +1,9 @@
+# UI Code for Probability Distribution Calculator
+# Date: May 2016
+# Author: Jenny Nguyen
+# Email: jnnguyen2@wisc.edu
 
-
+# ui function
 fluidPage(
   # App Title
   h1("Probability Distribution Calculator"),
@@ -107,21 +111,33 @@ fluidPage(
       
       # input percentiles or quantiles
       flowLayout(
+        
+        # option to select x or p
         radioButtons("type", "input", c("x", "probability")),
-        # Select X
+        
+        # select X
         uiOutput("x_option1"),
         uiOutput("x_option2"),
-        # Select p
+        
+        # select p
         uiOutput("p_option")
       )
     
     )),
     
-    # Print Plot
+    ################
+    # Plot Outputs #
+    ################
     mainPanel(
+      
+      # statement of distribution and model
       h3(textOutput("prob")),
+      
+      # density function plot with shaded regions
       plotOutput("density", height = "300px"),
+      
+      # cumulative density function plot if P(X < x)
       plotOutput("cdf", height = "300px")
     )
   )
-)
+) # end of ui function
