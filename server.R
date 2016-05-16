@@ -19,8 +19,8 @@ function(input, output){
   
   # convert user distributions from English to R
   dist <- reactive({
-    r_dist <- c("norm", "t", "gamma", "chisq", "f", "unif", "binom", "nbinom", "pois")
-    eng_dist <- c("Normal", "T", "Gamma", "Chi-Square", "F", "Uniform", "Binomial", "Negative Binomial", "Poisson")
+    r_dist <- c("norm", "t", "gamma", "chisq", "f", "unif", "binom", "nbinom", "pois", "beta")
+    eng_dist <- c("Normal", "T", "Gamma", "Chi-Square", "F", "Uniform", "Binomial", "Negative Binomial", "Poisson", "Beta")
     plyr::mapvalues(input$dist, eng_dist, r_dist)
   })
   
@@ -35,6 +35,14 @@ function(input, output){
     switch(input$side,
            "one-sided" = radioButtons("side2", "one-sided options", c("lower tail", "upper tail")),
            "two-sided" = radioButtons("side2", "two-sided options", c("between", "both tails"))
+    )
+  })
+  
+  # provide description of the model being generated
+  output$model_descr <- renderText({
+    switch(input$side,
+           "one-sided" = ifelse(input$side2 == "lower tail", "P(X <= x)", "P(X > x)"),
+           "two-sided" = ifelse(input$side2 == "between", "P(x1 < X < x2)", "P(X < x1 or X > x2)")
     )
   })
   
@@ -143,6 +151,18 @@ function(input, output){
              formals(dfun)$max <- upper
              formals(qfun)$min <- lower
              formals(qfun)$max <- upper
+           },
+           "Beta" = {
+             shape1 <- input$beta.shape1
+             shape2 <- input$beta.shape2
+             min <- min(input$x, 0) - 0.02
+             max <- max(input$x, 1) + 0.02
+             formals(pfun)$shape1 <- shape1
+             formals(pfun)$shape2 <- shape2
+             formals(dfun)$shape1 <- shape1
+             formals(dfun)$shape2 <- shape2
+             formals(qfun)$shape1 <- shape1
+             formals(qfun)$shape2 <- shape2
            }
     )
     
@@ -220,7 +240,7 @@ function(input, output){
       if( (input$side == "one-sided") | (input$side == "two-sided" & is_symmetric()) ){
         outText
       } else{
-        paste0(prefix, "distribution is not symmetric about 0")
+        paste0(prefix, "distribution is not symmetric")
       }
     # if x's are specified, print probability
     } else{

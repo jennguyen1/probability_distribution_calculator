@@ -65,6 +65,14 @@ fluidPage(
             numericInput("unif.max", "upper", 1)
           )
         ),
+        # Beta distribution
+        tabPanel(
+          "Beta",
+          flowLayout(
+            numericInput("beta.shape1", "shape 1", 1),
+            numericInput("beta.shape2", "shape 2", 1)
+          )
+        ),
         
         # DISCRETE DISTRIBUTIONS #
 
@@ -106,7 +114,8 @@ fluidPage(
       # one-tailed or two-tailed of distribution
       flowLayout(
         radioButtons("side", "side", c("one-sided", "two-sided")),
-        uiOutput("side_option")
+        uiOutput("side_option"),
+        h3(textOutput("model_descr"))
       ),
       
       # input percentiles or quantiles
