@@ -2,6 +2,9 @@ name: probability_distribution_calculator
 account: jennynguyen
 server: shinyapps.io
 appId: 104157
-bundleId: 461921
+bundleId: 462272
 url: https://jennynguyen.shinyapps.io/probability_distribution_calculator/
-when: 1464135434.04034
+when: 1464178555.69636
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: README.md

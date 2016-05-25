@@ -146,7 +146,7 @@ function(input, output){
              formals(dfun)$df2 <- df.denom
              formals(qfun)$df1 <- df.num
              formals(qfun)$df2 <- df.denom
-             model_descr <- paste0("X ~ F(", df1, ", ", df2, ")")
+             model_descr <- paste0("X ~ F(", df.num, ", ", df.denom, ")")
            },
            "Uniform" = {
              lower <- input$unif.min
