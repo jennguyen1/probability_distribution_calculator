@@ -1,4 +1,4 @@
 # probability_distribution_calculator
 
-Run the app at the following address:
+Run the app:
 https://jennynguyen.shinyapps.io/probability_distribution_calculator/
