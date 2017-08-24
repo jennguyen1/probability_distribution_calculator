@@ -1,4 +1,4 @@
-# probability_distribution_calculator
+# Probability Distribution Calculator
 
 This shiny app calculates quantiles/probabilities and plots a variety of probability distributions.
 
