@@ -192,17 +192,22 @@ function(input, output){
   # provide additional options for one or two sided values in terms of x or probability
   output$x_option1 <- renderUI({
     if(input$type == "x"){
+      min_val <- ifelse(is_discrete(), 0, NA)
+      step_val <- ifelse(is_discrete(), 1, 0.1)
       switch(input$side,
-             "one-sided" = numericInput("x", "x", 1),
-             "two-sided" = numericInput("x1", "x1", 1)
+             "one-sided" = numericInput("x", "x", 1, step = step_val, min = min_val),
+             "two-sided" = numericInput("x1", "x1", 1, step = step_val, min = min_val)
       )
     } else{
-      numericInput("p", "p", 0.25, min = 0, max = 1)
+      numericInput("p", "p", 0.25, min = 0, max = 1, step = 0.1)
     }
   })
   output$x_option2 <- renderUI({
     if(input$type == "x"){
-      if( input$side == "two-sided" ) numericInput("x2", "x2", 2)
+      if( input$side == "two-sided" ) {
+        step_val <- ifelse(is_discrete(), 1, 0.1)
+        numericInput("x2", "x2", input$x1, min = input$x1, step = step_val)
+      }
     }
   })
 
