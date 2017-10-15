@@ -9,4 +9,4 @@
 ![screenshot of display 1](images/app_screenshot1.jpg)
 ![screenshot of display 2](images/app_screenshot2.jpg)
 
-This shiny app calculates quantiles/probabilities and plots a variety of probability distributions. 
+This R Shiny app calculates quantiles/probabilities and plots a variety of probability distributions. 
