@@ -2,7 +2,7 @@
 
 ## Check it Out!
 
-[Run the app](https://jennynguyen.shinyapps.io/probability_distribution_calculator/)
+[Run the app here.](https://jennynguyen.shinyapps.io/probability_distribution_calculator/)
 
 ## Quick Summary
 
