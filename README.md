@@ -1,4 +1,4 @@
-# Retirement Calculator
+# Probability Distribution Calculator
 
 ## Check it Out!
 
