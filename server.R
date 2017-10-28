@@ -151,8 +151,11 @@ function(input, output){
            "Uniform" = {
              lower <- input$unif.min
              upper <- input$unif.max
-             min <- min(input$x, lower) - 0.02
-             max <- max(input$x, upper) + 0.02
+             min <- min(input$x, lower)
+             max <- max(input$x, upper)
+             addition <- (max - min) * 0.000000000001
+             min <- min - addition
+             max <- max + addition
              formals(pfun)$min <- lower
              formals(pfun)$max <- upper
              formals(dfun)$min <- lower
@@ -164,8 +167,11 @@ function(input, output){
            "Beta" = {
              shape1 <- input$beta.shape1
              shape2 <- input$beta.shape2
-             min <- min(input$x, 0) - 0.02
-             max <- max(input$x, 1) + 0.02
+             min <- min(input$x, 0) 
+             max <- max(input$x, 1) 
+             addition <- (max - min) * 0.000000000001
+             min <- min - addition
+             max <- max + addition
              formals(pfun)$shape1 <- shape1
              formals(pfun)$shape2 <- shape2
              formals(dfun)$shape1 <- shape1
@@ -332,8 +338,8 @@ function(input, output){
 
       # generate plot using shading function
       density <- ggplot(data = NULL, aes(x = c(params$min, params$max))) +
-        stat_function(fun = params$dfun, size = 1.25) +
-        stat_function(fun = shade_fun, geom = "area", fill = "royalblue", color = "royalblue")
+        stat_function(fun = shade_fun, geom = "area", fill = "royalblue", color = "royalblue") +
+        stat_function(fun = params$dfun, size = 1.25)
     }
 
     # add axis labels
