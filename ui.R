@@ -12,7 +12,12 @@ dashboardPage(
   dashboardHeader(title = "Probability Distribution Calculator"),
 
   # Disable Sidebar
-  dashboardSidebar(disable = TRUE),
+  dashboardSidebar(
+    collapsed = TRUE,
+    sidebarMenu(
+      menuItem("Github Source Code", href = "https://github.com/jennguyen1/probability_distribution_calculator", icon = icon("github"))
+    )
+  ),
 
   # Vertical layout for inputs
   dashboardBody( fluidRow(
@@ -175,5 +180,7 @@ dashboardPage(
       # cumulative density function plot if P(X < x)
       plotOutput("cdf", height = "300px")
     )
-  )))
+  )),
+  span(p("Copyright (c) 2018 Jennifer N Nguyen under the MIT License"), style = "font-size:12px; color:grey")
+  )
 ) # end of ui function
