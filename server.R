@@ -153,7 +153,7 @@ function(input, output){
              upper <- input$unif.max
              min <- min(input$x, lower)
              max <- max(input$x, upper)
-             addition <- (max - min) * 0.000000000001
+             addition <- 0#(max - min) * 0.000000000001
              min <- min - addition
              max <- max + addition
              formals(pfun)$min <- lower
@@ -169,7 +169,7 @@ function(input, output){
              shape2 <- input$beta.shape2
              min <- min(input$x, 0) 
              max <- max(input$x, 1) 
-             addition <- (max - min) * 0.000000000001
+             addition <- 0#(max - min) * 0.000000000001
              min <- min - addition
              max <- max + addition
              formals(pfun)$shape1 <- shape1
