@@ -30,7 +30,6 @@ dashboardPage(
       # set box title and image of the box
       title = "Select Distribution",
       status = "primary", solidHeader = TRUE, collapsible = TRUE,
-      bookmarkButton(),
       
       # box contents
       wellPanel(
@@ -47,6 +46,7 @@ dashboardPage(
           tabPanel(
             "Normal",
             flowLayout(
+              br(), br(),
               numericInput("norm.mean", "mean", 0),
               numericInput("norm.sd", "standard deviation", 1, min = 0)
             )
@@ -54,17 +54,20 @@ dashboardPage(
           # T distribution
           tabPanel(
             "T",
+            br(),
             numericInput("t.df", "df", 3, min = 0)
           ),
           # X2 distribution
           tabPanel(
             "Chi-Square",
+            br(),
             numericInput("chisq.df", "df", 1, min = 0)
           ),
           # F distribution
           tabPanel(
             "F",
             flowLayout(
+              br(), br(),
               numericInput("f.df1", "df numerator", 1, min = 0),
               numericInput("f.df2", "df denominator", 1, min = 0)
             )
@@ -73,6 +76,7 @@ dashboardPage(
           tabPanel(
             "Gamma",
             flowLayout(
+              br(), br(),
               numericInput("gamma.shape", "shape", 1, min = 0),
               numericInput("gamma.rate", "rate", 1, min = 0)
             )
@@ -81,6 +85,7 @@ dashboardPage(
           tabPanel(
             "Uniform",
             flowLayout(
+              br(), br(),
               numericInput("unif.min", "lower", 0),
               numericInput("unif.max", "upper", 1)
             )
@@ -89,6 +94,7 @@ dashboardPage(
           tabPanel(
             "Beta",
             flowLayout(
+              br(), br(),
               numericInput("beta.shape1", "shape 1", 1, min = 0),
               numericInput("beta.shape2", "shape 2", 1, min = 0)
             )
@@ -100,21 +106,24 @@ dashboardPage(
           tabPanel(
             "Binomial",
             flowLayout(
+              br(), br(),
               numericInput("binom.n", "number of trials", 10, min = 0),
-              numericInput("binom.p", "probability of success", 0.5, min = 0, max = 1)
+              numericInput("binom.p", "probability of success", 0.5, min = 0, max = 1, step = 0.1)
             )
           ),
           # Poisson Distribution
           tabPanel(
             "Poisson",
+            br(),
             numericInput("pois.lambda", "mean", 1, min = 0)
           ),
           # Negative Binomial Distribution
           tabPanel(
             "Negative Binomial",
             flowLayout(
+              br(), br(),
               numericInput("nbinom.n", "number of trials", 10, min = 0),
-              numericInput("nbinom.p", "probability of success", 0.5, min = 0, max = 1)
+              numericInput("nbinom.p", "probability of success", 0.5, min = 0, max = 1, step = 0.1)
             )
           ),
 
@@ -176,11 +185,9 @@ dashboardPage(
       # statement of distribution and model
       h3(textOutput("prob"), align = "center"),
 
-      # density function plot with shaded regions
-      plotOutput("density", height = "300px"),
-
-      # cumulative density function plot if P(X < x)
-      plotOutput("cdf", height = "300px")
+      uiOutput("plots"), 
+      bookmarkButton()
+      
     )
   )),
   span(p("Copyright (c) 2018 Jennifer N Nguyen under the MIT License"), style = "font-size:12px; color:grey")

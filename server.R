@@ -349,10 +349,7 @@ function(input, output){
   ###################
   # Generate Graphs #
   ###################
-
-
   
-  # probability density function
   output$density <- renderPlot({
     # obtain parameters
     params <- get_params()
@@ -421,12 +418,9 @@ function(input, output){
     # if p is specified, print plot as long as it is not a two-tailed of a non-symmetric distribution
     plot_eligible()
     density
-
   })
 
-  # cumulative distribution function - only if side option is one-sided lower tail
   output$cdf <- renderPlot({
-    if( input$side == "one-sided" & input$side2 == "lower tail"){
 
       # obtain parameters
       params <- get_params()
@@ -452,9 +446,17 @@ function(input, output){
         geom_point(aes(x = in_x(), y = params$pfun(in_x())), size = 2, color = "royalblue") +
         # axis labels
         xlab("X") + ylab("Cumulative Probability")
-
+  })
+  
+  # plot outputs
+  output$plots <- renderUI({
+    if( input$side == "one-sided" & input$side2 == "lower tail"){
+      column(width = 12, plotOutput("density", height = "300px"), plotOutput("cdf", height = "300px"))
+    } else {
+      plotOutput("density", height = "300px")
     }
   })
+  
 
 } # end of server function
 
