@@ -10,6 +10,8 @@ library(dplyr)
 library(ggplot2)
 theme_set(theme_bw())
 
+signif_digits <- 4
+
 # server function
 function(input, output){
 
@@ -23,11 +25,8 @@ function(input, output){
     eng_dist <- c("Normal", "T", "Gamma", "Chi-Square", "F", "Uniform", "Binomial", "Negative Binomial", "Poisson", "Beta")
     plyr::mapvalues(input$dist, eng_dist, r_dist)
   })
-
-  # flag for discrete distributions
+  
   is_discrete <- reactive({ dist() %in% c("binom", "nbinom", "pois") })
-
-  # flag for symmetric distributions about 0
   is_symmetric <- reactive({ dist() %in% c("norm", "t", "unif") })
 
   # provide additional options depending on one or two sided values
@@ -57,6 +56,13 @@ function(input, output){
     # set the parameters for the distributions
     switch(input$dist,
            "Binomial" = {
+             validate(
+              need(input$binom.n, "Provide all requested inputs"),
+              need(input$binom.p, "Provide all requested inputs"), 
+              need(input$binom.n > 0, "N must be greater than 0"),
+              need(dplyr::between(input$binom.p, 0, 1), "P must be between 0 and 1"),
+              need(abs(input$binom.n - round(input$binom.n)) == 0, "N must be an integer")
+             )
              n <- input$binom.n
              p <- input$binom.p
              min <- min(input$x, qbinom(1e-4, n, p))
@@ -70,6 +76,13 @@ function(input, output){
              model_descr <- paste0("X ~ Bin(", n, ", ", p, ")")
            },
            "Negative Binomial" = {
+             validate(
+               need(input$nbinom.n, "Provide all requested inputs"),
+               need(input$nbinom.p, "Provide all requested inputs"),
+               need(input$nbinom.n > 0, "N must be greater than 0"),
+               need(dplyr::between(input$nbinom.p, 0, 1), "P must be between 0 and 1"),
+               need(abs(input$nbinom.n - round(input$nbinom.n)) == 0, "N must be an integer")
+             )
              n <- input$nbinom.n
              p <- input$nbinom.p
              min <- min(input$x, qnbinom(1e-4, n, p))
@@ -83,6 +96,11 @@ function(input, output){
              model_descr <- paste0("X ~ NBin(", n, ", ", p, ")")
            },
            "Poisson" = {
+             validate(
+               need(input$pois.lambda, "Provide all requested inputs"), 
+               need(input$pois.lambda > 0, "Lambda must be greater than 0"), 
+               need(abs(input$pois.lambda - round(input$pois.lambda)) == 0, "Lambda must be an integer")
+             )
              lambda <- input$pois.lambda
              min <- min(input$x, qpois(1e-4, lambda))
              max <- max(input$x, qpois(1e-4, lambda, lower.tail = FALSE))
@@ -92,6 +110,11 @@ function(input, output){
              model_descr <- paste0("X ~ Pois(", lambda, ")")
            },
            "Normal" = {
+             validate(
+               need(input$norm.mean, "Provide all requested inputs"),
+               need(input$norm.sd, "Provide all requested inputs"), 
+               need(input$norm.sd > 0, "Standard deviation must be greater than 0")
+             )
              mean <- input$norm.mean
              sd <- input$norm.sd
              min <- min(input$x, qnorm(1e-4, mean, sd))
@@ -105,6 +128,10 @@ function(input, output){
              model_descr <- paste0("X ~ N(", mean, ", ", sd^2, ")")
            },
            "T" = {
+             validate(
+               need(input$t.df, "Provide all requested inputs"), 
+               need(input$t.df > 0, "DF must be greater than 0")
+             )
              df <- input$t.df
              min <- min(input$x, -4)
              max <- max(input$x, 4)
@@ -114,6 +141,11 @@ function(input, output){
              model_descr <- paste0("X ~ T(", df, ")")
            },
            "Gamma" = {
+             validate(
+               need(input$gamma.shape, "Provide all requested inputs"),
+               need(input$gamma.rate, "Provide all requested inputs"), 
+               need(input$gamma.shape > 0 & input$gamma.rate > 0, "Shape and rate must be greater than 0")
+             )
              shape <- input$gamma.shape
              rate <- input$gamma.rate
              min <- 0
@@ -127,6 +159,10 @@ function(input, output){
              model_descr <- paste0("X ~ Gamma(", shape, ", ", rate, ")")
            },
            "Chi-Square" = {
+             validate(
+               need(input$chisq.df, "Provide all requested inputs"), 
+               need(input$chisq.df > 0, "DF must be greater than 0")
+             )
              df <- input$chisq.df
              min <- 0
              max <- max(input$x, qchisq(1e-4, df, lower.tail = FALSE))
@@ -136,6 +172,11 @@ function(input, output){
              model_descr <- paste0("X ~ X^2(", df, ")")
            },
            "F" = {
+             validate(
+               need(input$f.df1, "Provide all requested inputs"),
+               need(input$f.df2, "Provide all requested inputs"), 
+               need(input$f.df1 > 0 & input$f.df2 > 0, "DF must be greater than 0")
+             )
              df.num <- input$f.df1
              df.denom <- input$f.df2
              min <- 0
@@ -149,13 +190,15 @@ function(input, output){
              model_descr <- paste0("X ~ F(", df.num, ", ", df.denom, ")")
            },
            "Uniform" = {
+             validate(
+               need(input$unif.min, "Provide all requested inputs"),
+               need(input$unif.max, "Provide all requested inputs"), 
+               need(input$unif.min < input$unif.max, "Min must be less than max")
+             )
              lower <- input$unif.min
              upper <- input$unif.max
              min <- min(input$x, lower)
              max <- max(input$x, upper)
-             addition <- 0#(max - min) * 0.000000000001
-             min <- min - addition
-             max <- max + addition
              formals(pfun)$min <- lower
              formals(pfun)$max <- upper
              formals(dfun)$min <- lower
@@ -165,13 +208,15 @@ function(input, output){
              model_descr <- paste0("X ~ Unif(", lower, ", ", upper, ")")
            },
            "Beta" = {
+             validate(
+               need(input$beta.shape1, "Provide all requested inputs"),
+               need(input$beta.shape2, "Provide all requested inputs"), 
+               need(input$beta.shape1 > 0 & input$beta.shape2 > 0, "Shape must be greater than 0")
+             )
              shape1 <- input$beta.shape1
              shape2 <- input$beta.shape2
              min <- min(input$x, 0) 
              max <- max(input$x, 1) 
-             addition <- 0#(max - min) * 0.000000000001
-             min <- min - addition
-             max <- max + addition
              formals(pfun)$shape1 <- shape1
              formals(pfun)$shape2 <- shape2
              formals(dfun)$shape1 <- shape1
@@ -192,7 +237,6 @@ function(input, output){
 
   })
 
-  # provide description of the model being generated
   output$model_descr <- renderText(get_params()$model_descr)
 
   # provide additional options for one or two sided values in terms of x or probability
@@ -211,25 +255,60 @@ function(input, output){
   output$x_option2 <- renderUI({
     if(input$type == "x"){
       if( input$side == "two-sided" ) {
+        min_val <- ifelse(is_discrete(), 0, NA)
         step_val <- ifelse(is_discrete(), 1, 0.1)
-        numericInput("x2", "x2", input$x1, min = input$x1, step = step_val)
+        numericInput("x2", "x2", 1, step = step_val, min = min_val)
       }
     }
   })
 
   # initialize x depending on input: if x return x else if probability  return qfun(p)
   in_x <- reactive({
-    ifelse(input$type == "x", input$x, signif(get_params()$qfun(input$p, lower.tail = input$side2 == "lower tail"), 3))
+    
+    if(input$type == "x"){
+      validate(
+        need(input$x, "Provide all requested inputs")
+      )
+      input$x
+    } else{
+      validate(
+        need(input$p, "Provide all requested inputs")
+      )
+      signif(get_params()$qfun(input$p, lower.tail = input$side2 == "lower tail"), signif_digits)
+    }
   })
   in_x1 <- reactive({
-    use_p <- ifelse(input$side2 == "both tails", input$p/2, .5 - input$p/2)
-    ifelse(input$type == "x", input$x1, signif(get_params()$qfun(use_p), 3))
+    validate(
+      need(input$x1, "Provide all requested inputs")
+    )
+    if(input$type == "x"){
+      input$x1
+    } else{
+      use_p <- ifelse(input$side2 == "both tails", input$p/2, .5 - input$p/2)
+      signif(get_params()$qfun(use_p), signif_digits)
+    }
   })
   in_x2 <- reactive({
-    use_p <- ifelse(input$side2 == "both tails", input$p/2, .5 - input$p/2)
-    ifelse(input$type == "x", input$x2, signif(get_params()$qfun(use_p, lower.tail = FALSE), 3))
+    if(input$type == "x"){
+      validate(
+        need(input$x2, "Provide all requested inputs"),
+        need(input$x2 >= input$x1, "X2 must be greater than X1")
+      )
+      input$x2
+    } else{
+      use_p <- ifelse(input$side2 == "both tails", input$p/2, .5 - input$p/2)
+      signif(get_params()$qfun(use_p, lower.tail = FALSE), signif_digits)
+    }
   })
 
+  # error msg if cannot draw plot
+  plot_eligible <- reactive({
+    msg <- paste0(input$dist, ": distribution is not symmetric")
+    validate(
+      need(!(input$type == "probability" & input$side == "two-sided" & !is_symmetric()), msg)
+    )
+  })
+  
   #######################
   # Compute Probability #
   #######################
@@ -241,36 +320,29 @@ function(input, output){
     prefix <- paste0(input$dist, ": ")
 
     # compute probabilities
-    outText <- switch(input$side,
-                      # compute probabilities for one-sided computations
-                      "one-sided" = {
-                        switch(input$side2,
-                               "lower tail" = paste0(prefix, "P(X <= ", in_x(), ") = ", signif(get_params()$pfun(in_x()), 3)),
-                               "upper tail" = paste0(prefix, "P(X > ", in_x(), ") = ", signif(get_params()$pfun(in_x(), lower.tail = FALSE), 3))
-                        )
-                      },
-                      # compute probabilities for two-sided computations
-                      "two-sided" = {
-                        switch(input$side2,
-                               "between" = paste0(prefix, "P(", in_x1(), " < X < ", in_x2(), ") = ", signif(get_params()$pfun(in_x2()) - get_params()$pfun(in_x1()) , 3)),
-                               "both tails" = paste0(prefix, "P(X < ", in_x1(), " or X > ", in_x2(), ") = ", signif(get_params()$pfun(in_x2(), lower.tail = FALSE) + get_params()$pfun(in_x1()) , 3))
-                        )
-                      }
+    out_text <- switch(
+      input$side,
+      # compute probabilities for one-sided computations
+      "one-sided" = {
+        switch(
+          input$side2,
+          "lower tail" = paste0(prefix, "P(X <= ", in_x(), ") = ", signif(get_params()$pfun(in_x()), signif_digits)),
+          "upper tail" = paste0(prefix, "P(X > ", in_x(), ") = ", signif(get_params()$pfun(in_x(), lower.tail = FALSE), signif_digits))
+        )
+      },
+      # compute probabilities for two-sided computations
+      "two-sided" = {
+        switch(
+          input$side2,
+         "between" = paste0(prefix, "P(", in_x1(), " < X < ", in_x2(), ") = ", signif(get_params()$pfun(in_x2()) - get_params()$pfun(in_x1()) , signif_digits)),
+         "both tails" = paste0(prefix, "P(X < ", in_x1(), " or X > ", in_x2(), ") = ", signif(get_params()$pfun(in_x2(), lower.tail = FALSE) + get_params()$pfun(in_x1()) , signif_digits))
+        )
+      }
     )
 
-    # output probability
-
     # if p is specified, print probability as long as it is not a two-tailed of a non-symmetric distribution
-    if(input$type == "probability"){
-      if( (input$side == "one-sided") | (input$side == "two-sided" & is_symmetric()) ){
-        outText
-      } else{
-        paste0(prefix, "distribution is not symmetric")
-      }
-      # if x's are specified, print probability
-    } else{
-      outText
-    }
+    plot_eligible()
+    out_text
 
   })
 
@@ -278,6 +350,8 @@ function(input, output){
   # Generate Graphs #
   ###################
 
+
+  
   # probability density function
   output$density <- renderPlot({
     # obtain parameters
@@ -289,15 +363,18 @@ function(input, output){
       # generate data and shading
       x <- params$min:params$max
       data <- data.frame(x = x, y = params$dfun(x))
-      data$shade <- switch(input$side,
-                           "one-sided" = switch(input$side2,
-                                                "lower tail" = ifelse(data$x <= in_x(), "shade", "no-shade"),
-                                                "upper tail" = ifelse(data$x <= in_x(), "no-shade", "shade")
-                           ),
-                           "two-sided" = switch(input$side2,
-                                                "between" = ifelse(dplyr::between(data$x, in_x1(), in_x2()), "shade", "no-shade"),
-                                                "both tails" = ifelse(dplyr::between(data$x, in_x1(), in_x2()), "no-shade", "shade")
-                           )
+      data$shade <- switch(
+        input$side,
+        "one-sided" = switch(
+          input$side2,
+          "lower tail" = ifelse(data$x <= in_x(), "shade", "no-shade"),
+          "upper tail" = ifelse(data$x <= in_x(), "no-shade", "shade")
+        ),
+        "two-sided" = switch(
+          input$side2,
+          "between" = ifelse(dplyr::between(data$x, in_x1(), in_x2()), "shade", "no-shade"),
+          "both tails" = ifelse(dplyr::between(data$x, in_x1(), in_x2()), "no-shade", "shade")
+        )
       )
 
       # generate plot: if portion of plot is shaded
@@ -315,47 +392,35 @@ function(input, output){
       # continuous distributions
     } else{
 
-      # function for shading in area under the curve wrt probability
-      shade_fun <- function(x){
-        # generate the y values of graph
-        y <- params$dfun(x)
-
-        # only keep the y values that correspond to the probability inequality
-        switch(input$side,
-               "one-sided" = switch(input$side2,
-                                    "lower tail" = y[x > in_x()] <- NA,
-                                    "upper tail" = y[x < in_x()] <- NA
-               ),
-               "two-sided" = switch(input$side2,
-                                    "between" = y[!dplyr::between(x, in_x1(), in_x2())] <- NA,
-                                    "both tails" = y[dplyr::between(x, in_x1(), in_x2())] <- NA
-               )
-        )
-
-        # return results
-        return(y)
+      shade_lim <- switch(
+        input$side,
+        "one-sided" = switch(
+          input$side2, 
+          "lower tail" = c(params$min, in_x()),
+          "upper tail" = c(in_x(), params$max)
+        ),
+        "two-sided" = c(in_x1(), in_x2())
+      )
+      
+      # fix for if probability = 0: make the shading invisible
+      if(shade_lim[1] == shade_lim[2]){
+        shade_lim <- c(shade_lim[1], shade_lim[1]*1.0001)
       }
-
-      # generate plot using shading function
-      density <- ggplot(data = NULL, aes(x = c(params$min, params$max))) +
-        stat_function(fun = shade_fun, geom = "area", fill = "royalblue", color = "royalblue") +
-        stat_function(fun = params$dfun, size = 1.25)
+      a_val <- ifelse(shade_lim[1] == shade_lim[2], 0, 1)
+      
+      # apply outline to all considered values
+      range_lim <- c(min(params$min, shade_lim), max(params$max, shade_lim))
+      
+      density <- ggplot(data = NULL, aes(x = range_lim)) +
+        geom_area(stat = "function", fun = params$dfun, fill = "royalblue", xlim = shade_lim, alpha = a_val) +
+        geom_area(stat = "function", fun = params$dfun, fill = "white", color = "black", size = 1.25, alpha = 0)
     }
-
-    # add axis labels
+    
     density <- density + xlab("X") + ylab("Density") + ggtitle(paste(input$dist, "distribution"))
 
-    # output plot
-
     # if p is specified, print plot as long as it is not a two-tailed of a non-symmetric distribution
-    if(input$type == "probability"){
-      if( (input$side == "one-sided") | (input$side == "two-sided" & is_symmetric()) ){
-        density
-      }
-      # if x's are specified, print plot
-    } else{
-      density
-    }
+    plot_eligible()
+    density
 
   })
 

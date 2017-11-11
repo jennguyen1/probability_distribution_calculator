@@ -6,6 +6,7 @@
 library(shinydashboard)
 
 # ui function
+function(request){
 dashboardPage(
 
   # App Title
@@ -29,14 +30,15 @@ dashboardPage(
       # set box title and image of the box
       title = "Select Distribution",
       status = "primary", solidHeader = TRUE, collapsible = TRUE,
-
+      bookmarkButton(),
+      
       # box contents
       wellPanel(
 
         # print X distribution in common notation
         h3(textOutput("model_descr"), align = "center"),
         br(),
-
+        
         tabsetPanel(
 
           # CONTINUOUS DISTRIBUTIONS #
@@ -46,33 +48,33 @@ dashboardPage(
             "Normal",
             flowLayout(
               numericInput("norm.mean", "mean", 0),
-              numericInput("norm.sd", "standard deviation", 1)
+              numericInput("norm.sd", "standard deviation", 1, min = 0)
             )
           ),
           # T distribution
           tabPanel(
             "T",
-            numericInput("t.df", "df", 3)
+            numericInput("t.df", "df", 3, min = 0)
           ),
           # X2 distribution
           tabPanel(
             "Chi-Square",
-            numericInput("chisq.df", "df", 1)
+            numericInput("chisq.df", "df", 1, min = 0)
           ),
           # F distribution
           tabPanel(
             "F",
             flowLayout(
-              numericInput("f.df1", "df numerator", 1),
-              numericInput("f.df2", "df denominator", 1)
+              numericInput("f.df1", "df numerator", 1, min = 0),
+              numericInput("f.df2", "df denominator", 1, min = 0)
             )
           ),
           # Gamma distribution
           tabPanel(
             "Gamma",
             flowLayout(
-              numericInput("gamma.shape", "shape", 1),
-              numericInput("gamma.rate", "rate", 1)
+              numericInput("gamma.shape", "shape", 1, min = 0),
+              numericInput("gamma.rate", "rate", 1, min = 0)
             )
           ),
           # Uniform distribution
@@ -87,8 +89,8 @@ dashboardPage(
           tabPanel(
             "Beta",
             flowLayout(
-              numericInput("beta.shape1", "shape 1", 1),
-              numericInput("beta.shape2", "shape 2", 1)
+              numericInput("beta.shape1", "shape 1", 1, min = 0),
+              numericInput("beta.shape2", "shape 2", 1, min = 0)
             )
           ),
 
@@ -98,21 +100,21 @@ dashboardPage(
           tabPanel(
             "Binomial",
             flowLayout(
-              numericInput("binom.n", "number of trials", 10),
-              numericInput("binom.p", "probability of success", 0.5)
+              numericInput("binom.n", "number of trials", 10, min = 0),
+              numericInput("binom.p", "probability of success", 0.5, min = 0, max = 1)
             )
           ),
           # Poisson Distribution
           tabPanel(
             "Poisson",
-            numericInput("pois.lambda", "mean", 1)
+            numericInput("pois.lambda", "mean", 1, min = 0)
           ),
           # Negative Binomial Distribution
           tabPanel(
             "Negative Binomial",
             flowLayout(
-              numericInput("nbinom.n", "number of trials", 10),
-              numericInput("nbinom.p", "probability of success", 0.5)
+              numericInput("nbinom.n", "number of trials", 10, min = 0),
+              numericInput("nbinom.p", "probability of success", 0.5, min = 0, max = 1)
             )
           ),
 
@@ -183,4 +185,4 @@ dashboardPage(
   )),
   span(p("Copyright (c) 2018 Jennifer N Nguyen under the MIT License"), style = "font-size:12px; color:grey")
   )
-) # end of ui function
+)} # end of ui function
